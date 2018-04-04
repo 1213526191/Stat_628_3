@@ -1,7 +1,7 @@
 import numpy as numpy
 
 class decisionTreeNode:
-    def __init__(self, Length=0, isLeaf=False, splitAtt=None, splitValue=None, children=None, isLeftChild=True, isRoot=True):
+    def __init__(self, Length=0, isLeaf=False, splitAtt=None, splitValue=None, children=None, isLeftChild=True, isRoot=True, Amount=0):
         self.Length = Length
         self.isLeaf = isLeaf
         self.splitAtt = splitAtt
@@ -9,6 +9,7 @@ class decisionTreeNode:
         self.children = []
         self.isLeftChild = isLeftChild
         self.isRoot = isRoot
+        self.Amount = Amount
     
     def setLength(self, Length_):
         self.Length = Length_
@@ -24,6 +25,8 @@ class decisionTreeNode:
         self.isLeftChild = isLeftChild_
     def setisRoot(self, isRoot_):
         self.isRoot = isRoot_
+    def setAmount(self, Amount_):
+        self.Amount = Amount_
 
     def getLength(self):
         return(self.Length)
@@ -39,3 +42,5 @@ class decisionTreeNode:
         return(self.isLeftChild)
     def getisRoot(self):
         return(self.isRoot)
+    def getAmount(self):
+        return(self.Amount)
