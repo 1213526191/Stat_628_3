@@ -50,9 +50,9 @@ def iTree(X, e, l, Length=0, isLeaf=False, splitAtt=None, splitValue=None, isLef
                             isLeftChild=False, isRoot=False, Amount=Amountr)
         node.setChildren(Child_right)
     else:
-        Amounta = len(X.index)
+        Amount = len(X.index)
         node = nodeInfo(X, Length, isLeaf=True, splitAtt=splitAtt, splitValue=splitValue, 
-                        isLeftChild=isLeftChild, isRoot=isRoot, Amount=Amounta)
+                        isLeftChild=isLeftChild, isRoot=isRoot, Amount=Amount)
     return(node)
         
 # def printTree(node, depth = 0):
