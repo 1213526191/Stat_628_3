@@ -7,13 +7,14 @@ import random
 dat = pd.read_csv('../data/dat1.csv')
 
 # split train and test data
+X = dat.drop('Class', axis=1)
 e=0
 l=np.log2(len(X.index))
-n = 10000
-nn = 10204
-dat_train = dat.loc[:n, ['Time', 'V1', 'V2', 'V10', 'Amount', 'Class']]
-dat_test = dat.loc[nn, ['Time', 'V1', 'V2', 'V10', 'Amount', 'Class']]
-X = dat_train.drop('Class', axis=1)
+
+
+def myc(x=0):
+    y = 2*(np.log(x-1) + 0.5772156649) -2*(x-1)/x
+    return(y)
 
 def nodeInfo(X, Length=0, isLeaf=False, splitAtt=None, splitValue=None, isLeftChild=None, isRoot=True, Amount=0):
     node = decisionTreeNode()
@@ -75,29 +76,32 @@ def iTree(X, e, l, Length=0, isLeaf=False, splitAtt=None, splitValue=None, isLef
 #     for child in node.getChildren():
 #         printTree(child, depth)
 
-def classify(X, decisionTree):
+def classify(X, decisionTree, l):
     prediction = None
     if decisionTree.getisLeaf():
-        return(decisionTree.getLength() + decisionTree.getAmount())
+        if decisionTree.getAmount()>1:
+            return(2**(-(decisionTree.getLength() + myc(decisionTree.getAmount()))/myc(l)))
+        else:
+            return(2**(-(decisionTree.getLength())/myc(l)))
     for child in decisionTree.getChildren():
         splitAtt = child.getsplitAtt()
         splitValue = child.getsplitValue()
         if child.getisLeftChild():
             if X[splitAtt] <= splitValue:
-                prediction = classify(X, child)
+                prediction = classify(X, child, l)
         else:
             if X[splitAtt] > splitValue:
-                prediction = classify(X, child)
+                prediction = classify(X, child, l)
     return(prediction)
         
-def predict(train, test, decisionTree):
-    numData = len(train.index)
-    prediction = np.zeros(numData)
-    for i in range(numData):
-        instance = train.loc[i, :]
-        prediction[i] = classify(instance, decisionTree)
-    pred_y = classify(test, decisionTree)
-    return prediction, pred_y
+# def predict(train, test, decisionTree):
+#     numData = len(train.index)
+#     prediction = np.zeros(numData)
+#     for i in range(numData):
+#         instance = train.loc[i, :]
+#         prediction[i] = classify(instance, decisionTree)
+#     pred_y = classify(test, decisionTree)
+#     return prediction, pred_y
 
 
 mytree = iTree(X,e,l) 
