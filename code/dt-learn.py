@@ -2,17 +2,9 @@ import numpy as np
 import pandas as pd
 from tree import decisionTreeNode
 import random
+import time
 
-# read data
-dat = pd.read_csv('../data/dat1.csv')
-
-# split train and test data
-X = dat.drop('Class', axis=1)
-e=0
-l=np.log2(len(X.index))
-
-
-def myc(x=0):
+def myc(x=0): # c function
     y = 2*(np.log(x-1) + 0.5772156649) -2*(x-1)/x
     return(y)
 
@@ -56,56 +48,94 @@ def iTree(X, e, l, Length=0, isLeaf=False, splitAtt=None, splitValue=None, isLef
                         isLeftChild=isLeftChild, isRoot=isRoot, Amount=Amount)
     return(node)
         
-# def printTree(node, depth = 0):
-#     if not node.getisRoot():
-#         x = node.getsplitAtt()
-#         if node.getisLeftChild():
-#             equality = "<="
-#         else:
-#             equality = ">"
-#         threshold = "%.6f" % node.getsplitValue() # Six decimal
-#         if node.getisLeaf():
-#             print(depth * "|\t" + "%s %s %s [%d]: %s" \
-#                                   % (node.getsplitAtt(), equality, threshold,
-#                                      node.getAmount(), node.getLength()))
-#         else:
-#             print(depth * "|\t" + "%s %s %s [%d]" \
-#                                   % (node.getsplitAtt(), equality, threshold,
-#                                      node.getAmount()))
-#         depth +=1
-#     for child in node.getChildren():
-#         printTree(child, depth)
+def printTree(node, depth = 0):
+    if not node.getisRoot():
+        x = node.getsplitAtt()
+        if node.getisLeftChild():
+            equality = "<="
+        else:
+            equality = ">"
+        threshold = "%.6f" % node.getsplitValue() # Six decimal
+        if node.getisLeaf():
+            print(depth * "|\t" + "%s %s %s [%d]: %s" \
+                                  % (node.getsplitAtt(), equality, threshold,
+                                     node.getAmount(), node.getLength()))
+        else:
+            print(depth * "|\t" + "%s %s %s [%d]" \
+                                  % (node.getsplitAtt(), equality, threshold,
+                                     node.getAmount()))
+        depth +=1
+    for child in node.getChildren():
+        printTree(child, depth)
 
-def classify(X, decisionTree, l):
+def PathLength(X, decisionTree, l):
     prediction = None
     if decisionTree.getisLeaf():
         if decisionTree.getAmount()>1:
-            return(2**(-(decisionTree.getLength() + myc(decisionTree.getAmount()))/myc(l)))
+            return(decisionTree.getLength() + myc(decisionTree.getAmount()))
         else:
-            return(2**(-(decisionTree.getLength())/myc(l)))
+            return(decisionTree.getLength())
     for child in decisionTree.getChildren():
         splitAtt = child.getsplitAtt()
         splitValue = child.getsplitValue()
         if child.getisLeftChild():
             if X[splitAtt] <= splitValue:
-                prediction = classify(X, child, l)
+                prediction = PathLength(X, child, l)
         else:
             if X[splitAtt] > splitValue:
-                prediction = classify(X, child, l)
+                prediction = PathLength(X, child, l)
     return(prediction)
+
+def AnomalyScore(x, n):
+    return(2**(-x/myc(n)))
         
-# def predict(train, test, decisionTree):
-#     numData = len(train.index)
-#     prediction = np.zeros(numData)
-#     for i in range(numData):
-#         instance = train.loc[i, :]
-#         prediction[i] = classify(instance, decisionTree)
-#     pred_y = classify(test, decisionTree)
-#     return prediction, pred_y
+def predict(dat, decisionTree, l):
+    numData = len(dat.index)
+    prediction = np.zeros(numData)
+    for i in range(numData):
+        instance = dat.iloc[i, :]
+        prediction[i] = PathLength(instance, decisionTree, l)
+    return prediction
+
+def mymse(pred, true):
+    diff = pred-true
+    y = [1 if a==1 else 400 if a==-1 else 0 for a in diff]
+    return(sum(y)/len(diff))
 
 
-mytree = iTree(X,e,l) 
-prediction, pred_y = predict(dat_train, dat_test, mytree)       
-sum(prediction <= pred_y)/len(prediction)
-sum(dat_train.Class)/len(dat_train.index)
+## start -------------------------------------------------
 
+dat = pd.read_csv('../data/dat1.csv')
+
+t1 = time.time()
+phi = 256
+N = 20000
+dat_use = dat.iloc[range(N), ]
+the_list = range(N)
+random.seed(1234)
+cishu = 100
+prediction = np.zeros(N)
+for i in range(cishu):
+    print(i, end="")
+    train_index = random.sample(the_list, phi)
+    dat_train = dat_use.iloc[train_index, ]
+    X = dat_train.drop('Class', axis=1)
+    y = dat_train.Class
+    e=0
+    l=np.log2(len(X.index))
+    myTree = iTree(X, e, l)
+    prediction += predict(dat_use, myTree, l)
+    
+prediction_final = prediction/cishu
+
+t2 = time.time() 
+print(t2 - t1)
+
+sh = 0.7
+result = AnomalyScore(prediction_final, phi)
+prediction_final2 = np.zeros(N)
+prediction_final2[np.where(result>sh)] = 1
+true_value = dat_use.Class
+MSE = mymse(prediction_final2, dat_use.Class)
+
+print(MSE)
